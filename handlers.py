@@ -3,15 +3,21 @@ import shutil
 import pylast
 from aiogram.types import Message
 from mutagen.flac import FLAC
-from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT,LASTFM_API_SECRET,LASTFM_USERNAME,LASTFM_PASSWORD_HASH ,LASTFM_API_KEY
+from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT,LASTFM_API_SECRET,LASTFM_API_KEY
 from worker import add_task_to_queue
+import certifi
 
+GENRES = [
+    "rock", "pop", "jazz", "electronic", "hip hop",
+    "classical", "metal", "blues", "reggae", "folk"
+]
+
+os.environ["SSL_CERT_FILE"] = certifi.where()
+certifi.where()
 
 network = pylast.LastFMNetwork(
     api_key=LASTFM_API_KEY,
-    api_secret=LASTFM_API_SECRET,
-    username=LASTFM_USERNAME,
-    password_hash=LASTFM_PASSWORD_HASH,
+    api_secret=LASTFM_API_SECRET
 )
 
 async def handle_audio(message: Message, message_queue):
@@ -46,7 +52,16 @@ async def handle_audio(message: Message, message_queue):
             elif tag_key.lower() == "comment":
                 audio_tags["comment"] = [MUSIC_COMMENT]
                 audio_tags.save()
-                audio_tags["genre"] == pylast.Track.get_top_tags(audio_tags.get("name"))
+
+                track = network.get_track(audio_tags.tags['artist'][0], audio_tags.tags['title'][0])
+                tags = track.get_top_tags()
+                audio_tags["GENRE"] = ""
+                if tags:
+                    for tag in tags:
+                        tag_name = tag.item.name.lower()
+                        if tag_name in GENRES:
+
+                            audio_tags["GENRE"] += [tag_name]
                 audio_tags.save()
 
         await add_task_to_queue(message_queue, message.bot, message.chat.id, f"Скачан файл: {file_name}", message.message_id)
