@@ -3,19 +3,17 @@ import shutil
 import pylast
 from aiogram.types import Message
 from mutagen.flac import FLAC
-from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT,LASTFM_API_SECRET,LASTFM_API_KEY
+from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT,LASTFM_API_SECRET,LASTFM_API_KEY,GENRES
 from worker import add_task_to_queue
 import certifi
+import logger
 
-GENRES = [
-    "rock", "pop", "jazz", "electronic", "hip hop",
-    "classical", "metal", "blues", "reggae", "folk"
-]
+
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 certifi.where()
 
-network = pylast.LastFMNetwork(
+LASTFM = pylast.LastFMNetwork(
     api_key=LASTFM_API_KEY,
     api_secret=LASTFM_API_SECRET
 )
@@ -53,7 +51,7 @@ async def handle_audio(message: Message, message_queue):
                 audio_tags["comment"] = [MUSIC_COMMENT]
                 audio_tags.save()
 
-                track = network.get_track(audio_tags.tags['artist'][0], audio_tags.tags['title'][0])
+                track = LASTFM.get_track(audio_tags.tags['artist'][0], audio_tags.tags['title'][0])
                 tags = track.get_top_tags()
                 audio_tags["GENRE"] = ""
                 if tags:

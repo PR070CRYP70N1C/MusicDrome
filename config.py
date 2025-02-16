@@ -7,3 +7,7 @@ LOG_FILE = ""
 
 LASTFM_API_KEY = "your_api_key"
 LASTFM_API_SECRET = "your_api_secret"
+GENRES = [
+    "rock", "pop", "jazz", "electronic", "hip hop",
+    "classical", "metal", "blues", "reggae", "folk"
+]
