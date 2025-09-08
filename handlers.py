@@ -1,9 +1,22 @@
 import os
 import shutil
+import pylast
 from aiogram.types import Message
 from mutagen.flac import FLAC
-from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT
+from config import MUSIC_FOLDER, TMP_DIR, MUSIC_COMMENT,LASTFM_API_SECRET,LASTFM_API_KEY,GENRES
 from worker import add_task_to_queue
+import certifi
+import logger
+
+
+
+os.environ["SSL_CERT_FILE"] = certifi.where()
+certifi.where()
+
+LASTFM = pylast.LastFMNetwork(
+    api_key=LASTFM_API_KEY,
+    api_secret=LASTFM_API_SECRET
+)
 
 async def handle_audio(message: Message, message_queue):
     audio_data = message.audio
@@ -36,6 +49,17 @@ async def handle_audio(message: Message, message_queue):
                 album = tag_value[0]
             elif tag_key.lower() == "comment":
                 audio_tags["comment"] = [MUSIC_COMMENT]
+                audio_tags.save()
+
+                track = LASTFM.get_track(audio_tags.tags['artist'][0], audio_tags.tags['title'][0])
+                tags = track.get_top_tags()
+                audio_tags["GENRE"] = ""
+                if tags:
+                    for tag in tags:
+                        tag_name = tag.item.name.lower()
+                        if tag_name in GENRES:
+
+                            audio_tags["GENRE"] += [tag_name]
                 audio_tags.save()
 
         await add_task_to_queue(message_queue, message.bot, message.chat.id, f"Скачан файл: {file_name}", message.message_id)
